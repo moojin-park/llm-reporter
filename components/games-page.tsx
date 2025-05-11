@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
@@ -8,17 +8,61 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getUserProfile } from "@/lib/user-profile"
-import { getAllGames, getGamesByUser, type Game } from "@/lib/games-data"
+import { fetchGames, fetchGamesByUser, type Game } from "@/lib/api"
 
 export function GamesPage() {
   const userProfile = getUserProfile()
-  const userGames = getGamesByUser(userProfile.userName)
-  const allGames = getAllGames()
-
+  const [userGames, setUserGames] = useState<Game[]>([])
+  const [allGames, setAllGames] = useState<Game[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadGames = async () => {
+      try {
+        setLoading(true)
+        const [userGamesData, allGamesData] = await Promise.all([
+          fetchGamesByUser(userProfile.userName),
+          fetchGames()
+        ])
+        setUserGames(userGamesData)
+        setAllGames(allGamesData)
+      } catch (err) {
+        setError('Failed to load games. Please try again later.')
+        console.error('Error loading games:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadGames()
+  }, [userProfile.userName])
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <SiteHeader />
+        <main className="container mx-auto py-8 px-4">
+          <div className="text-center">Loading games...</div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <SiteHeader />
+        <main className="container mx-auto py-8 px-4">
+          <div className="text-center text-red-500">{error}</div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -199,60 +243,13 @@ export function GamesPage() {
                         })}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Home Team:</span>
-                      <span>{selectedGame.homeTeam}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Away Team:</span>
-                      <span>{selectedGame.awayTeam}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Status:</span>
-                      <span>{selectedGame.completed ? "Completed" : "Upcoming"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-2">League Information</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">League:</span>
-                      <Link href={`/leagues/${selectedGame.leagueId}`} className="text-[#e4002b] hover:underline">
-                        {selectedGame.leagueName}
-                      </Link>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Week:</span>
-                      <span>{selectedGame.week}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Season:</span>
-                      <span>{selectedGame.season}</span>
-                    </div>
                   </div>
                 </div>
               </div>
-
-              {selectedGame.completed && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-2">Game Summary</h3>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href={`/games/${selectedGame.id}`}>View Full Box Score</Link>
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
       </main>
-
-      <footer className="bg-[#0a0a0a] text-white py-4 mt-8">
-        <div className="container mx-auto px-4 text-center text-sm">
-          © {new Date().getFullYear()} College Football Reporter
-        </div>
-      </footer>
     </div>
   )
 }

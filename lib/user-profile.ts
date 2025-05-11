@@ -23,6 +23,14 @@ let userProfileData: UserProfile = {
 // In a real app, this would check authentication state
 let _isUserLoggedIn = true // Set to false to see the non-logged in view
 
+// Callback to notify components of login state changes
+let onLoginStateChange: (() => void) | null = null
+
+// Register callback for login state changes
+export function registerLoginStateCallback(callback: () => void) {
+  onLoginStateChange = callback
+}
+
 // Simulate fetching the user profile
 export function getUserProfile(): UserProfile {
   // In a real app, this would be an API call or context lookup
@@ -44,4 +52,17 @@ export function isUserLoggedIn(): boolean {
 // Toggle login state (for demo purposes)
 export function toggleLoginState(): void {
   _isUserLoggedIn = !_isUserLoggedIn
+}
+
+// Sign out function
+export function signOut(): void {
+  _isUserLoggedIn = false
+  // Notify components of the state change
+  if (onLoginStateChange) {
+    onLoginStateChange()
+  }
+  // In a real app, this would also:
+  // - Clear any auth tokens
+  // - Clear any user data from localStorage/sessionStorage
+  // - Call the backend to invalidate the session
 }

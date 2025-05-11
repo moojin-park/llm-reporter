@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,19 +13,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getUserProfile, isUserLoggedIn, toggleLoginState } from "@/lib/user-profile"
+import { getUserProfile, isUserLoggedIn, signOut, registerLoginStateCallback } from "@/lib/user-profile"
 import { useRouter } from "next/navigation"
 
 export function SiteHeader() {
   const userProfile = getUserProfile()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const loggedIn = isUserLoggedIn()
+  const [loggedIn, setLoggedIn] = useState(isUserLoggedIn())
   const router = useRouter()
 
+  useEffect(() => {
+    // Register callback for login state changes
+    registerLoginStateCallback(() => {
+      setLoggedIn(false)
+      router.push("/")
+    })
+  }, [router])
+
   const handleSignOut = () => {
-    // In a real app, this would call an authentication service to sign out
-    toggleLoginState() // For demo purposes, this toggles the login state
-    router.push("/") // Redirect to home page
+    signOut()
   }
 
   return (

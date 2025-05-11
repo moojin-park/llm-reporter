@@ -7,20 +7,26 @@ import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { getUserProfile, isUserLoggedIn } from "@/lib/user-profile"
+import { getUserProfile, isUserLoggedIn, registerLoginStateCallback } from "@/lib/user-profile"
 import { getAnnouncements, type Announcement } from "@/lib/announcements"
 
 export function HomePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn())
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [isVideoLoading, setIsVideoLoading] = useState(true)
+  const [videoError, setVideoError] = useState(false)
 
   // Video URL - can be updated later
-  const videoUrl = "https://example.com/football-background.mp4"
+  const videoUrl = "/background.mp4"
 
   useEffect(() => {
-    // Check if user is logged in
-    setIsLoggedIn(isUserLoggedIn())
+    // Register callback for login state changes
+    registerLoginStateCallback(() => {
+      setIsLoggedIn(false)
+    })
+  }, [])
 
+  useEffect(() => {
     // Get announcements
     setAnnouncements(getAnnouncements())
   }, [])
